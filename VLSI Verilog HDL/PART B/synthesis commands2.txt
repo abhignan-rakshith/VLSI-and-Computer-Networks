@@ -1,0 +1,65 @@
+legacy_genus:/> read_hdl /home/cadence/DATABASE/test/rcfiles/rtl/updowncounter.v
+
+legacy_genus:/> set_attribute library /home/cadence/DATABASE/test/rcfiles/lib/slow_vdd1v0_basicCells.lib 
+
+legacy_genus:/> set_attribute lib_search_path /home/cadence/DATABASE/test/rcfiles/rtl/
+       
+
+legacy_genus:/> elaborate  bcdsynch_updowncounter           
+
+legacy_genus:/> synthesize -to_mapped 
+
+legacy_genus:/> report timing > updownCt1 
+legacy_genus:/> report area > updownCa1 
+legacy_genus:/> report power  > updownCp1 
+
+legacy_genus:/> synthesize -to_mapped -effort medium  
+
+         
+legacy_genus:/> report timing > updownCtm 
+legacy_genus:/> report area > updownCam 
+legacy_genus:/> report power  > updownCpm  
+
+legacy_genus:/> write_sdf > Updowncsdf1  
+legacy_genus:/> write_sdc > updowncsdc  
+
+create_clock -name SYSCLK -period 20 -waveform {0 5} [get_ports2 SCLK]
+create_clock -period 5 [get_ports SCAN_CLK]
+
+create_clock -name BDYCLK -period 15 -waveform {5 12} [get_ports GBLCLK]
+
+set_clock_transition -rise 0.1 [get_clocks CLK_CONFIG]
+set_clock_transition -fall 0.12 [get_clocks CLK_CONFIG]
+
+set_clock_uncertainty -setup 0.2 [get_clocks CLK_CONFIG]
+set_clock_uncertainty -hold 0.05 [get_clocks CLK_CONFIG]
+
+create_clock 2 [get_ports DCLK]
+# Name of clock is DCLK, has period of 2ns with a
+# rise edge at 0ns and a fall edge at 1ns.
+create_generated_clock -name DCLKDIV2 -edges {2 4 6} \
+-source DCLK [get_pins UBUF2/Z]
+# The generated clock with name DCLKDIV2 is defined at
+# the output of the buffer. Its waveform is formed by
+# having a rise edge at edge 2 of the source clock,
+# fall edge at edge 4 of the source clock and the next
+# rise edge at edge 6 of the source clock.
+create_generated_clock -name PH0CLK -edges {3 4 7} \
+-source DCLK [get_pins UAND0/Z]
+# The generated clock PH0CLK is formed using
+# the 3, 4, 7 edges of the source clock.
+create_generated_clock -name PH1CLK -edges {1 2 5} \
+-source DCLK [get_pins UAND1/Z]
+# The generated clock with name PH1CLK is defined at
+# the output of the and cell and is formed with
+# edges 1, 2 and 5 of the source clock.
+
+
+report_cell_delay_calculation
+-from_pin {pin|hpin} -to_pin {pin|hpin}
+[-from_rise] [-from_fall]
+[-to_rise] [-to_fall]
+[-view analysis_view] [> file]
+
+
+
